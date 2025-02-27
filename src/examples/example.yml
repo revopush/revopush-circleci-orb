@@ -1,13 +1,23 @@
 description: >
-  Sample example description.
-# Provide a use-case based example for using this orb.
-# Everything in the `usage` section will be displayed in the orb registry.
-# Comments are not retained.
+  Publish react-native bundle using Revopush CLI.
 usage:
   version: 2.1
   orbs:
-    <orb-name>: <namespace>/<orb-name>@1.2.3
+    revopush: revopush/revopush-circleci-orb@0.0.2
+  jobs:
+    publish-react-native-bundle:
+      docker:
+        - image: cimg/node:current
+      steps:
+        - checkout
+        - revopush/install:
+            revopush_access_key: REVOPUSH_ACCESS_KEY
+            revopush_cli_version: 0.0.3
+        - run: npm ci
+        - run:
+            command: revopush release-react ios_app ios -d Staging
+            name: Release iOS App
   workflows:
-    use-my-orb:
+    main:
       jobs:
-        - <orb-name>/<job-name>
+        - publish-react-native-bundle

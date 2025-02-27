@@ -1,0 +1,18 @@
+description: >
+  This command installs Revopush CLI into Circle CI workflow context.
+parameters:
+  revopush_cli_version:
+    type: string
+    default: ""
+    description: "Version of Revopush CLI to install (should be Semver). Optional. The default is the latest version."
+  revopush_access_key:
+    type: string
+    default: "REVOPUSH_ACCESS_KEY"
+    description: "Revopush access key to use. Set this to the name of the environment variable you will set to hold this value."
+steps:
+  - run:
+      environment:
+        CLI_VERSION: <<parameters.revopush_cli_version>>
+        ACCESS_KEY: <<parameters.revopush_access_key>>
+      name: Install Revopush CLI
+      command: <<include(scripts/install.sh)>>
