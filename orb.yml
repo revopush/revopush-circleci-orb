@@ -1,0 +1,74 @@
+version: 2.1
+description: |
+    This orb allows you to install Revopush CLI into Circle CI workflow context.
+display:
+    home_url: https://revopush.org/
+    source_url: https://github.com/revopush/revopush-circleci-orb
+commands:
+    install:
+        description: |
+            This command installs Revopush CLI into Circle CI workflow context.
+        parameters:
+            revopush_access_key:
+                default: REVOPUSH_ACCESS_KEY
+                description: Revopush access key to use. Set this to the name of the environment variable you will set to hold this value.
+                type: string
+            revopush_cli_version:
+                default: ""
+                description: Version of Revopush CLI to install (should be Semver). Optional. The default is the latest version.
+                type: string
+        steps:
+            - run:
+                command: |+
+                    #!/bin/bash
+                    set -ex
+
+                    if ! which revopush > /dev/null; then
+                      echo "Installing Revopush CLI..."
+                      npm install --prefix=$HOME/.local --global @revopush/code-push-cli@$CLI_VERSION> /dev/null 2>&1
+                    fi
+
+                    echo "Logging in to Revopush..."
+                    revopush logout > /dev/null 2>&1 || true
+
+
+                    # we use variable indirection to get the value of the ACCESS_KEY variable.
+                    # ACCESS_KEY value points to a name of variable to retrieve.
+                    if [ -z ${!ACCESS_KEY}]; then
+                        echo "Revopush Access Key not provided. Set the REVOPUSH_ACCESS_KEY environment variable."
+                        exit 1
+                    else
+                        revopush login --accessKey ${!ACCESS_KEY}
+                        exit 0
+                    fi
+
+                environment:
+                    ACCESS_KEY: <<parameters.revopush_access_key>>
+                    CLI_VERSION: <<parameters.revopush_cli_version>>
+                name: Install Revopush CLI
+examples:
+    example:
+        description: |
+            Publish react-native bundle using Revopush CLI.
+        usage:
+            version: "2.1"
+            orbs:
+                revopush: revopush/revopush-circleci-orb@0.0.2
+            jobs:
+                publish-react-native-bundle:
+                    docker:
+                        - image: cimg/node:current
+                    steps:
+                        - checkout
+                        - revopush/install:
+                            revopush_access_key: REVOPUSH_ACCESS_KEY
+                            revopush_cli_version: 0.0.3
+                        - run: npm ci
+                        - run:
+                            command: revopush release-react ios_app ios -d Staging
+                            name: Release iOS App
+            workflows:
+                main:
+                    jobs:
+                        - publish-react-native-bundle
+
